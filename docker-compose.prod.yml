@@ -1,0 +1,95 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: smart_opd
+      MYSQL_USER: smartopd
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$(cat /run/secrets/mysql_root_password)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    secrets:
+      - mysql_password
+      - mysql_root_password
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.production
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health', timeout=5)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    secrets:
+      - mysql_password
+      - app_secret_key
+      - msg91_auth_key
+      - gupshup_api_key
+      - gupshup_sms_password
+      - provider_webhook_token
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOSTNAME: hospital.example.in
+    command: >
+      /bin/sh -c "envsubst '$$PUBLIC_HOSTNAME'
+      < /etc/nginx/templates/default.conf.template
+      > /etc/nginx/conf.d/default.conf
+      && nginx -g 'daemon off;'"
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./deploy/nginx/prod.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy/certs:/etc/letsencrypt:ro
+      - ./deploy/acme:/var/www/certbot:ro
+
+secrets:
+  mysql_password:
+    file: ./deploy/secrets/mysql_password.txt
+  mysql_root_password:
+    file: ./deploy/secrets/mysql_root_password.txt
+  app_secret_key:
+    file: ./deploy/secrets/app_secret_key.txt
+  msg91_auth_key:
+    file: ./deploy/secrets/msg91_auth_key.txt
+  gupshup_api_key:
+    file: ./deploy/secrets/gupshup_api_key.txt
+  gupshup_sms_password:
+    file: ./deploy/secrets/gupshup_sms_password.txt
+  provider_webhook_token:
+    file: ./deploy/secrets/provider_webhook_token.txt
+
+volumes:
+  mysql_prod_data:

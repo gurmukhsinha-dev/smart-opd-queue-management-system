@@ -1,0 +1,57 @@
+server {
+  listen 80;
+  server_name ${PUBLIC_HOSTNAME};
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name ${PUBLIC_HOSTNAME};
+
+  ssl_certificate /etc/letsencrypt/live/${PUBLIC_HOSTNAME}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/${PUBLIC_HOSTNAME}/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_timeout 10m;
+
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  add_header X-Content-Type-Options nosniff always;
+  add_header X-Frame-Options SAMEORIGIN always;
+  add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+  location /api/events/stream {
+    proxy_pass http://backend:5000/api/events/stream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Connection "";
+    proxy_buffering off;
+    proxy_cache off;
+    chunked_transfer_encoding off;
+    proxy_read_timeout 3600;
+  }
+
+  location /api/ {
+    proxy_pass http://backend:5000/api/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+
+  location / {
+    proxy_pass http://frontend:80/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+}

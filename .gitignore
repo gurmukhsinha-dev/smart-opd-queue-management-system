@@ -1,0 +1,16 @@
+.env
+.env.*
+!**/.env.example
+!**/.env.production.example
+backend/.env.production
+frontend/.env.production
+deploy/secrets/*.txt
+deploy/certs/
+__pycache__/
+backend/__pycache__/
+frontend/node_modules/
+backend/.venv/
+frontend/dist/
+.codex/
+Smart-OPD-Project-Share-2026-05-04/
+Smart-OPD-Project-Share-2026-05-04.zip

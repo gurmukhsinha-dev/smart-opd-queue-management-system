@@ -1,0 +1,10 @@
+doctor_id,department,priority,age_band,queue_length,doctor_delay_minutes,slot_hour,actual_consultation_minutes
+DOC-001,General OPD,normal,adult,6,5,10,8
+DOC-001,General OPD,elderly,60_plus,4,10,11,10
+DOC-001,General OPD,normal,adult,3,0,12,7
+DOC-002,Cardiology,elderly,60_plus,5,12,10,12
+DOC-002,Cardiology,emergency,child,2,5,11,15
+DOC-002,Cardiology,normal,adult,7,15,13,11
+DOC-003,Pediatrics,normal,child,8,15,9,6
+DOC-003,Pediatrics,emergency,child,1,0,14,10
+DOC-003,Pediatrics,normal,child,4,5,15,7
