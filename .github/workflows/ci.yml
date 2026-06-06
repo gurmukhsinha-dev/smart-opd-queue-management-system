@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  backend-smoke-tests:
-    name: Backend smoke tests
+  backend-tests:
+    name: Backend unit and API tests
     runs-on: ubuntu-latest
 
     steps:

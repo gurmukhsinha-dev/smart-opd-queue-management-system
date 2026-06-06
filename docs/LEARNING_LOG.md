@@ -22,3 +22,27 @@ Today we turned the Smart OPD project into the beginning of a recruiter-facing p
 ### Interview Explanation
 
 This project is a hospital OPD queue management system. The backend models doctors, patients, departments, token order, wait-time estimates, and notification scheduling. The first quality improvement was to add automated checks so future changes can be made with more confidence.
+
+## Day 02 - Flask API Contract Tests
+
+Date: 2026-06-06
+
+Today we moved one level closer to production-style confidence by testing the Flask API through HTTP endpoints.
+
+### What Changed
+
+- Added API contract tests for `/api/health` and `/api/bootstrap`.
+- Added an auth test proving admin routes reject anonymous requests and accept a valid admin token.
+- Added an OTP-backed patient registration workflow test that sends an OTP, verifies it, registers a patient, and tracks the created record.
+- Renamed the backend CI job so GitHub shows both unit and API coverage.
+
+### Concepts To Understand
+
+- A unit test checks a small piece of logic directly. The Day 1 queue tests are close to this style.
+- An API contract test checks the behavior another client depends on: status codes, JSON fields, authentication, and workflow shape.
+- Authentication tests matter because a recruiter or reviewer wants to see that protected backend routes are not public by accident.
+- Test setup should isolate state. These API tests reset the in-memory queue and OTP service before every test so one test cannot secretly depend on another.
+
+### Interview Explanation
+
+After adding queue-engine smoke tests, I added Flask API tests to prove the backend works through real HTTP routes. The most important workflow test covers OTP verification, patient registration, and patient tracking, which is a realistic path through the Smart OPD system.
